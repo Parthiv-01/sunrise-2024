@@ -14,6 +14,11 @@ import {
   ThemeProvider,
   createTheme,
   IconButton,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
@@ -23,6 +28,9 @@ import {
   completeTask,
   getAllTasks,
   initializeTasks,
+  createTask as apiCreateTask,
+  updateTask as apiUpdateTask,
+  deleteTask as apiDeleteTask,
 } from "@/modules/taskManager";
 
 // Define light and dark themes
@@ -59,6 +67,16 @@ export default function Home() {
     todo: 0,
     inProgress: 0,
     completed: 0,
+  });
+
+  // State for creating and updating tasks
+  const [open, setOpen] = useState(false);
+  const [editTask, setEditTask] = useState<Task | null>(null);
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+    persona: "",
+    group: 0,
   });
 
   // Theme toggle handler
@@ -115,8 +133,8 @@ export default function Home() {
     updateTaskCounts(); // Update counts whenever the active section changes
   }, [activeSection]);
 
-  const handleCompleteTask = (taskTitle: string) => {
-    completeTask(taskTitle);
+  const handleCompleteTask = async (taskTitle: string) => {
+    await completeTask(taskTitle);
     fetchTasks();
     updateTaskCounts(); // Update counts after completing a task
   };
@@ -125,6 +143,66 @@ export default function Home() {
     setActiveSection(
       newValue === 0 ? "todo" : newValue === 1 ? "inProgress" : "completed"
     );
+  };
+
+  const handleOpen = (task?: Task) => {
+    if (task) {
+      setEditTask(task);
+      setNewTask({
+        title: task.title,
+        description: task.description,
+        persona: task.persona,
+        group: task.group,
+      });
+    } else {
+      setEditTask(null);
+      setNewTask({
+        title: "",
+        description: "",
+        persona: "",
+        group: 0,
+      });
+    }
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const handleCreateTask = async () => {
+    try {
+      await apiCreateTask(
+        newTask.title,
+        newTask.description,
+        newTask.persona,
+        newTask.group
+      );
+      fetchTasks();
+      updateTaskCounts();
+      handleClose();
+    } catch (error) {
+      console.error("Error creating task:", error);
+    }
+  };
+
+  const handleUpdateTask = async () => {
+    if (editTask) {
+      try {
+        await apiUpdateTask(editTask.id, newTask);
+        fetchTasks();
+        updateTaskCounts();
+        handleClose();
+      } catch (error) {
+        console.error("Error updating task:", error);
+      }
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    await apiDeleteTask(taskId);
+    fetchTasks();
+    updateTaskCounts();
   };
 
   const groupTasksByGroupId = (taskList: Task[]) => {
@@ -186,6 +264,22 @@ export default function Home() {
                                 Complete
                               </Button>
                             )}
+                            <Button
+                              variant="outlined"
+                              color="secondary"
+                              onClick={() => handleOpen(task)}
+                              style={{ marginLeft: "1rem" }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              onClick={() => handleDeleteTask(task.id)}
+                              style={{ marginLeft: "1rem" }}
+                            >
+                              Delete
+                            </Button>
                           </div>
                           <Typography variant="h6">{task.title}</Typography>
                           <Typography variant="body1">
@@ -221,25 +315,89 @@ export default function Home() {
           <IconButton color="inherit" onClick={handleThemeToggle}>
             {themeMode === "light" ? <DarkModeIcon /> : <LightModeIcon />}
           </IconButton>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => handleOpen()}
+            style={{ marginLeft: "1rem" }}
+          >
+            Create New Task
+          </Button>
         </Toolbar>
       </AppBar>
-      <Container>
-        <Tabs
-          value={
-            activeSection === "todo"
-              ? 0
-              : activeSection === "inProgress"
-              ? 1
-              : 2
-          }
-          onChange={handleTabChange}
-          aria-label="task tabs"
-        >
+      <Container style={{ marginTop: "1rem" }}>
+        <Tabs value={activeSection} onChange={handleTabChange}>
           <Tab label={`To Do (${taskCounts.todo})`} />
           <Tab label={`In Progress (${taskCounts.inProgress})`} />
           <Tab label={`Completed (${taskCounts.completed})`} />
         </Tabs>
-        {renderTasks(tasks)}
+        <Grid container spacing={3}>
+          {renderTasks(tasks)}
+        </Grid>
+        <Dialog open={open} onClose={handleClose}>
+          <DialogTitle>
+            {editTask ? "Update Task" : "Create New Task"}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Title"
+              fullWidth
+              variant="outlined"
+              value={newTask.title || (editTask ? editTask.title : "")}
+              onChange={(e) =>
+                setNewTask({ ...newTask, title: e.target.value })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Description"
+              fullWidth
+              variant="outlined"
+              multiline
+              rows={4}
+              value={
+                newTask.description || (editTask ? editTask.description : "")
+              }
+              onChange={(e) =>
+                setNewTask({ ...newTask, description: e.target.value })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Persona"
+              fullWidth
+              variant="outlined"
+              value={newTask.persona || (editTask ? editTask.persona : "")}
+              onChange={(e) =>
+                setNewTask({ ...newTask, persona: e.target.value })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Group"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={newTask.group || (editTask ? editTask.group : "")}
+              onChange={(e) =>
+                setNewTask({ ...newTask, group: parseInt(e.target.value, 10) })
+              }
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose} color="primary">
+              Cancel
+            </Button>
+            <Button
+              onClick={editTask ? handleUpdateTask : handleCreateTask}
+              color="primary"
+            >
+              {editTask ? "Update" : "Create"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </ThemeProvider>
   );
