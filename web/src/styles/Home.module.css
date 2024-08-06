@@ -7,6 +7,56 @@
   min-height: 100vh;
 }
 
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  position: sticky; /* Ensures it stays at the top while scrolling */
+  top: 0; /* Aligns it to the top of the viewport */
+  background-color: rgba(var(--nav-bg-rgb), 1); /* Adjust based on your theme */
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(var(--nav-border-rgb), 0.2); /* Optional border for separation */
+  z-index: 10; /* Ensures it stays above other content */
+}
+
+.nav button {
+  background-color: rgba(
+    var(--button-bg-rgb),
+    1
+  ); /* Adjust based on your theme */
+  border: none;
+  color: rgba(var(--button-text-rgb), 1); /* Adjust based on your theme */
+  padding: 10px 20px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.nav button:hover {
+  background-color: rgba(
+    var(--button-bg-hover-rgb),
+    1
+  ); /* Adjust based on your theme */
+}
+
+.nav button.active {
+  background-color: rgba(
+    var(--button-bg-active-rgb),
+    1
+  ); /* Adjust based on your theme */
+  transform: scale(1.05);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6rem 1rem; /* Adjusted padding to ensure space for fixed nav */
+  min-height: 100vh;
+}
+
 .description {
   display: inherit;
   justify-content: inherit;
@@ -41,7 +91,13 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(25%, auto));
+  grid-template-columns: repeat(3, minmax(33.33%, auto));
+  max-width: 100%;
+  width: var(--max-width);
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(50%, auto));
   max-width: 100%;
   width: var(--max-width);
 }
@@ -135,6 +191,13 @@
     grid-template-columns: 1fr;
     margin-bottom: 120px;
     max-width: 320px;
+    text-align: center;
+  }
+
+  .grid2 {
+    grid-template-columns: 1fr;
+    margin-bottom: 120px;
+    max-width: 160px;
     text-align: center;
   }
 
