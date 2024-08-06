@@ -326,7 +326,17 @@ export default function Home() {
         </Toolbar>
       </AppBar>
       <Container style={{ marginTop: "1rem" }}>
-        <Tabs value={activeSection} onChange={handleTabChange}>
+        <Tabs
+          value={
+            activeSection === "todo"
+              ? 0
+              : activeSection === "inProgress"
+              ? 1
+              : 2
+          }
+          onChange={handleTabChange}
+          aria-label="task tabs"
+        >
           <Tab label={`To Do (${taskCounts.todo})`} />
           <Tab label={`In Progress (${taskCounts.inProgress})`} />
           <Tab label={`Completed (${taskCounts.completed})`} />
