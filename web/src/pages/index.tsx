@@ -8,8 +8,6 @@ import {
   Button,
   AppBar,
   Toolbar,
-  Tabs,
-  Tab,
   CssBaseline,
   ThemeProvider,
   createTheme,
@@ -22,6 +20,10 @@ import {
 } from "@mui/material";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
 import {
   getActiveTasks,
   getCompletedTasks,
@@ -59,9 +61,6 @@ interface Task {
 
 export default function Home() {
   const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
-  const [activeSection, setActiveSection] = useState<
-    "todo" | "inProgress" | "completed"
-  >("todo");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskCounts, setTaskCounts] = useState({
     todo: 0,
@@ -86,9 +85,9 @@ export default function Home() {
 
   // Fetch and update task counts
   const updateTaskCounts = async () => {
-    const allTasks = getAllTasks();
-    const activeTasks = getActiveTasks();
-    const completedTasks = getCompletedTasks();
+    const allTasks = await getAllTasks();
+    const activeTasks = await getActiveTasks();
+    const completedTasks = await getCompletedTasks();
 
     const todoCount = allTasks.filter(
       (task) => !task.completed && !task.assigned
@@ -104,22 +103,8 @@ export default function Home() {
   };
 
   const fetchTasks = async () => {
-    let taskList: Task[] = [];
-
-    switch (activeSection) {
-      case "todo":
-        taskList = getAllTasks() as Task[];
-        taskList = taskList.filter((task) => !task.completed && !task.assigned);
-        break;
-      case "inProgress":
-        taskList = getActiveTasks() as Task[];
-        break;
-      case "completed":
-        taskList = getCompletedTasks() as Task[];
-        break;
-    }
-
-    setTasks(taskList);
+    const allTasks = (await getAllTasks()) as Task[];
+    setTasks(allTasks);
   };
 
   useEffect(() => {
@@ -131,18 +116,12 @@ export default function Home() {
   useEffect(() => {
     fetchTasks();
     updateTaskCounts(); // Update counts whenever the active section changes
-  }, [activeSection]);
+  }, []);
 
   const handleCompleteTask = async (taskTitle: string) => {
-    completeTask(taskTitle);
+    await completeTask(taskTitle);
     fetchTasks();
     updateTaskCounts(); // Update counts after completing a task
-  };
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveSection(
-      newValue === 0 ? "todo" : newValue === 1 ? "inProgress" : "completed"
-    );
   };
 
   const handleOpen = (task?: Task) => {
@@ -172,7 +151,7 @@ export default function Home() {
 
   const handleCreateTask = async () => {
     try {
-      apiCreateTask(
+      await apiCreateTask(
         newTask.title,
         newTask.description,
         newTask.persona,
@@ -189,7 +168,7 @@ export default function Home() {
   const handleUpdateTask = async () => {
     if (editTask) {
       try {
-        apiUpdateTask(editTask.id, newTask);
+        await apiUpdateTask(editTask.id, newTask);
         fetchTasks();
         updateTaskCounts();
         handleClose();
@@ -200,7 +179,7 @@ export default function Home() {
   };
 
   const handleDeleteTask = async (taskId: number) => {
-    apiDeleteTask(taskId);
+    await apiDeleteTask(taskId);
     fetchTasks();
     updateTaskCounts();
   };
@@ -221,89 +200,69 @@ export default function Home() {
 
     return Object.keys(groupedTasks).map((groupId) => (
       <Grid container spacing={3} key={groupId} style={{ marginTop: "1rem" }}>
-        {groupedTasks[groupId].reduce((rows: JSX.Element[], task, index) => {
-          if (index % 2 === 0) {
-            rows.push(
-              <Grid
-                container
-                spacing={2}
-                key={index}
-                style={{ marginBottom: "1rem" }}
-              >
-                {groupedTasks[groupId].slice(index, index + 2).map((task) => (
-                  <Grid item xs={12} sm={6} md={6} key={task.id}>
-                    <Card style={{ maxWidth: "400px", margin: "0 auto" }}>
-                      <CardContent>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              marginBottom: "1rem",
-                            }}
-                          >
-                            <Typography
-                              variant="h6"
-                              style={{ marginRight: "1rem" }}
-                            >
-                              Task: {task.id}
-                            </Typography>
-                            {activeSection === "inProgress" && (
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={() => handleCompleteTask(task.title)}
-                                style={{ marginLeft: "1rem" }}
-                              >
-                                Complete
-                              </Button>
-                            )}
-                            <Button
-                              variant="outlined"
-                              color="secondary"
-                              onClick={() => handleOpen(task)}
-                              style={{ marginLeft: "1rem" }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              color="error"
-                              onClick={() => handleDeleteTask(task.id)}
-                              style={{ marginLeft: "1rem" }}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                          <Typography variant="h6">{task.title}</Typography>
-                          <Typography variant="body1">
-                            {task.description}
-                          </Typography>
-                          <Typography variant="body2">
-                            Persona: {task.persona}
-                          </Typography>
-                          <Typography variant="body2">
-                            Group: {task.group}
-                          </Typography>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            );
-          }
-          return rows;
-        }, [])}
+        {groupedTasks[groupId].map((task) => (
+          <Grid item xs={12} style={{ marginBottom: "1rem" }} key={task.id}>
+            <Card
+              style={{ width: "100%", maxWidth: "300px", margin: "0 auto" }}
+            >
+              <CardContent>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    {!task.completed && (
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleCompleteTask(task.title)}
+                        style={{ marginRight: "1rem" }}
+                      >
+                        <CheckCircleIcon />
+                      </IconButton>
+                    )}
+                    <IconButton
+                      color="secondary"
+                      onClick={() => handleOpen(task)}
+                      style={{ marginRight: "1rem" }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDeleteTask(task.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </div>
+                  <Typography variant="h6">{task.title}</Typography>
+                  <Typography variant="body1">{task.description}</Typography>
+                  <Typography variant="body2">
+                    Persona: {task.persona}
+                  </Typography>
+                  <Typography variant="body2">Group: {task.group}</Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
     ));
   };
+
+  const todoTasks = tasks.filter((task) => !task.completed && !task.assigned);
+  const inProgressTasks = tasks.filter(
+    (task) => task.assigned && !task.completed
+  );
+  const completedTasks = tasks.filter((task) => task.completed);
 
   return (
     <ThemeProvider theme={themeMode === "light" ? lightTheme : darkTheme}>
@@ -315,35 +274,60 @@ export default function Home() {
           <IconButton color="inherit" onClick={handleThemeToggle}>
             {themeMode === "light" ? <DarkModeIcon /> : <LightModeIcon />}
           </IconButton>
-          <Button
-            variant="contained"
+          <IconButton
             color="secondary"
             onClick={() => handleOpen()}
             style={{ marginLeft: "1rem" }}
           >
-            Create New Task
-          </Button>
+            <AddIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
-      <Container style={{ marginTop: "1rem" }}>
-        <Tabs
-          value={
-            activeSection === "todo"
-              ? 0
-              : activeSection === "inProgress"
-              ? 1
-              : 2
-          }
-          onChange={handleTabChange}
-          aria-label="task tabs"
+      <Container
+        style={{ marginTop: "1rem", marginBottom: "1rem", padding: 0 }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "30% 30% 30%",
+            gap: "1rem",
+          }}
         >
-          <Tab label={`To Do (${taskCounts.todo})`} />
-          <Tab label={`In Progress (${taskCounts.inProgress})`} />
-          <Tab label={`Completed (${taskCounts.completed})`} />
-        </Tabs>
-        <Grid container spacing={3}>
-          {renderTasks(tasks)}
-        </Grid>
+          <div
+            style={{
+              backgroundColor: themeMode === "light" ? "#f5f5f5" : "#333",
+              padding: "1rem",
+              height: "100%",
+            }}
+          >
+            <Typography variant="h6">To Do ({taskCounts.todo})</Typography>
+            {renderTasks(todoTasks)}
+          </div>
+          <div
+            style={{
+              backgroundColor: themeMode === "light" ? "#f5f5f5" : "#333",
+              padding: "1rem",
+              height: "100%",
+            }}
+          >
+            <Typography variant="h6">
+              In Progress ({taskCounts.inProgress})
+            </Typography>
+            {renderTasks(inProgressTasks)}
+          </div>
+          <div
+            style={{
+              backgroundColor: themeMode === "light" ? "#f5f5f5" : "#333",
+              padding: "1rem",
+              height: "100%",
+            }}
+          >
+            <Typography variant="h6">
+              Completed ({taskCounts.completed})
+            </Typography>
+            {renderTasks(completedTasks)}
+          </div>
+        </div>
         <Dialog open={open} onClose={handleClose}>
           <DialogTitle>
             {editTask ? "Update Task" : "Create New Task"}
