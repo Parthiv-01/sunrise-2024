@@ -86,9 +86,9 @@ export default function Home() {
 
   // Fetch and update task counts
   const updateTaskCounts = async () => {
-    const allTasks = await getAllTasks();
-    const activeTasks = await getActiveTasks();
-    const completedTasks = await getCompletedTasks();
+    const allTasks = getAllTasks();
+    const activeTasks = getActiveTasks();
+    const completedTasks = getCompletedTasks();
 
     const todoCount = allTasks.filter(
       (task) => !task.completed && !task.assigned
@@ -108,14 +108,14 @@ export default function Home() {
 
     switch (activeSection) {
       case "todo":
-        taskList = (await getAllTasks()) as Task[];
+        taskList = getAllTasks() as Task[];
         taskList = taskList.filter((task) => !task.completed && !task.assigned);
         break;
       case "inProgress":
-        taskList = (await getActiveTasks()) as Task[];
+        taskList = getActiveTasks() as Task[];
         break;
       case "completed":
-        taskList = (await getCompletedTasks()) as Task[];
+        taskList = getCompletedTasks() as Task[];
         break;
     }
 
@@ -134,7 +134,7 @@ export default function Home() {
   }, [activeSection]);
 
   const handleCompleteTask = async (taskTitle: string) => {
-    await completeTask(taskTitle);
+    completeTask(taskTitle);
     fetchTasks();
     updateTaskCounts(); // Update counts after completing a task
   };
@@ -172,7 +172,7 @@ export default function Home() {
 
   const handleCreateTask = async () => {
     try {
-      await apiCreateTask(
+      apiCreateTask(
         newTask.title,
         newTask.description,
         newTask.persona,
@@ -189,7 +189,7 @@ export default function Home() {
   const handleUpdateTask = async () => {
     if (editTask) {
       try {
-        await apiUpdateTask(editTask.id, newTask);
+        apiUpdateTask(editTask.id, newTask);
         fetchTasks();
         updateTaskCounts();
         handleClose();
@@ -200,7 +200,7 @@ export default function Home() {
   };
 
   const handleDeleteTask = async (taskId: number) => {
-    await apiDeleteTask(taskId);
+    apiDeleteTask(taskId);
     fetchTasks();
     updateTaskCounts();
   };
